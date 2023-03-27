@@ -22,10 +22,12 @@
     "@electricui/transport-node-websocket": "0.9.3",
     "@electricui/utility-crc16": "0.9.1",
     "debug": "^4.3.4",
+    "inquirer": "^8.2.5",
+    "inquirer-press-to-continue": "^1.1.4",
     "serialport": "10.4.0",
     "smart-buffer": "^4.1.0",
     "typescript": "4.8.3",
-    "usb": "2.4.3"
+    "usb": "2.9.0"
   },
   "description": "",
   "devDependencies": {
@@ -34,6 +36,7 @@
     "@rollup/plugin-run": "^2.1.0",
     "@rollup/plugin-typescript": "^8.5.0",
     "@rollup/pluginutils": "^4.2.1",
+    "@types/inquirer": "^7.3.3",
     "@types/node": "^16.11.7",
     "@yarnpkg/sdks": "3.0.0-rc.20",
     "find-root": "^1.1.0",

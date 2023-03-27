@@ -35,110 +35,142 @@ import { TypeCache } from '@electricui/core'
 
 export const typeCache = new TypeCache()
 
-const serialProducer = new SerialPortHintProducer({
-  SerialPort,
-  baudRate: 115200,
-})
-
-const usbProducer = new USBHintProducer({
-  usb,
-})
-
-// Serial Ports
-const serialTransportFactory = new TransportFactory((options: SerialTransportOptions) => {
-  const connectionInterface = new ConnectionInterface()
-
-  const transport = new SerialTransport(options)
-
-  const deliverabilityManager = new DeliverabilityManagerBinaryProtocol({
-    connectionInterface,
-    timeout: 3000,
+export function buildSerialProducer() {
+  const serialProducer = new SerialPortHintProducer({
+    SerialPort,
+    baudRate: 115200,
   })
 
-  const queryManager = new QueryManagerBinaryProtocol({
-    connectionInterface,
+  return serialProducer
+}
+
+export function buildUsbProducer() {
+  const usbProducer = new USBHintProducer({
+    usb,
   })
 
-  const cobsPipeline = new COBSPipeline()
-  const binaryPipeline = new BinaryPipeline()
-  const typeCachePipeline = new BinaryTypeCachePipeline(typeCache)
+  return usbProducer
+}
 
-  // If you have runtime generated messageIDs, add them as an array as a second argument
-  // `name` is added because it is requested by the metadata requester before handshake.
-  const undefinedMessageIDGuard = new UndefinedMessageIDGuardPipeline(typeCache, ['name', 'ws'])
+export function buildSerialTransportFactory() {
+  // Serial Ports
+  const serialTransportFactory = new TransportFactory(
+    (options: SerialTransportOptions) => {
+      const connectionInterface = new ConnectionInterface()
 
-  // TODO: if this is true, the handshake never completes with no indication of why
-  const codecPipeline = new CodecDuplexPipelineWithDefaults({ errorIfNoMatch: false })
+      const transport = new SerialTransport(options)
 
-  // Add custom codecs.
-  codecPipeline.addCodecs(customCodecs)
+      const deliverabilityManager = new DeliverabilityManagerBinaryProtocol({
+        connectionInterface,
+        timeout: 3000,
+      })
 
-  const largePacketPipeline = new BinaryLargePacketHandlerPipeline({
-    connectionInterface,
-    maxPayloadLength: 100,
-  })
+      const queryManager = new QueryManagerBinaryProtocol({
+        connectionInterface,
+      })
 
-  const connectionStaticMetadata = new ConnectionStaticMetadataReporter({
-    name: 'Serial',
-    baudRate: options.baudRate,
-  })
+      const cobsPipeline = new COBSPipeline()
+      const binaryPipeline = new BinaryPipeline()
+      const typeCachePipeline = new BinaryTypeCachePipeline(typeCache)
 
-  const heartbeatMetadata = new HeartbeatConnectionMetadataReporter({
-    interval: 500,
-    timeout: 1000,
-    startupSequence: [0, 2000, 2500, 3000, 4000, 5000],
-    // measurePipeline: true,
-  })
+      // If you have runtime generated messageIDs, add them as an array as a second argument
+      // `name` is added because it is requested by the metadata requester before handshake.
+      const undefinedMessageIDGuard = new UndefinedMessageIDGuardPipeline(
+        typeCache,
+        ['name', 'ws'],
+      )
 
-  connectionInterface.setTransport(transport)
-  connectionInterface.setQueryManager(queryManager)
-  connectionInterface.setDeliverabilityManager(deliverabilityManager)
-  connectionInterface.setPipelines([
-    cobsPipeline,
-    binaryPipeline,
-    largePacketPipeline,
-    codecPipeline,
-    typeCachePipeline,
-    undefinedMessageIDGuard,
-  ])
-  connectionInterface.addMetadataReporters([connectionStaticMetadata, heartbeatMetadata])
+      const codecPipeline = new CodecDuplexPipelineWithDefaults({
+        passthroughNoMatch: true,
+      })
 
-  return connectionInterface.finalise()
-})
+      // Add custom codecs.
+      codecPipeline.addCodecs(customCodecs)
 
-const serialConsumer = new DiscoveryHintConsumer({
-  factory: serialTransportFactory,
-  canConsume: (hint: Hint<SerialPortHintIdentification, SerialPortHintConfiguration>) => {
-    if (hint.getTransportKey() === SERIAL_TRANSPORT_KEY) {
-      // If you wanted to filter for specific serial devices, you would modify this section, removing the
-      // return statement below and uncommenting the block below it, modifying it to your needs.
-      const identification = hint.getIdentification()
+      const largePacketPipeline = new BinaryLargePacketHandlerPipeline({
+        connectionInterface,
+        maxPayloadLength: 100,
+      })
 
-      // Don't use the bluetooth device on MacOS
-      if (identification.path.includes('Bluetooth')) {
-        return false
+      const connectionStaticMetadata = new ConnectionStaticMetadataReporter({
+        name: 'Serial',
+        baudRate: options.baudRate,
+      })
+
+      const heartbeatMetadata = new HeartbeatConnectionMetadataReporter({
+        interval: 500,
+        timeout: 1000,
+        startupSequence: [0, 2000, 2500, 3000, 4000, 5000],
+        // measurePipeline: true,
+      })
+
+      connectionInterface.setTransport(transport)
+      connectionInterface.setQueryManager(queryManager)
+      connectionInterface.setDeliverabilityManager(deliverabilityManager)
+      connectionInterface.setPipelines([
+        cobsPipeline,
+        binaryPipeline,
+        largePacketPipeline,
+        codecPipeline,
+        typeCachePipeline,
+        undefinedMessageIDGuard,
+      ])
+      connectionInterface.addMetadataReporters([
+        connectionStaticMetadata,
+        heartbeatMetadata,
+      ])
+
+      return connectionInterface.finalise()
+    },
+  )
+
+  return serialTransportFactory
+}
+
+export function buildSerialConsumer(serialTransportFactory: TransportFactory) {
+  const serialConsumer = new DiscoveryHintConsumer({
+    factory: serialTransportFactory,
+    canConsume: (
+      hint: Hint<SerialPortHintIdentification, SerialPortHintConfiguration>,
+    ) => {
+      if (hint.getTransportKey() === SERIAL_TRANSPORT_KEY) {
+        // If you wanted to filter for specific serial devices, you would modify this section, removing the
+        // return statement below and uncommenting the block below it, modifying it to your needs.
+        const identification = hint.getIdentification()
+
+        // Don't use the bluetooth device on MacOS
+        if (identification.path.includes('Bluetooth')) {
+          return false
+        }
+
+        return true
       }
+      return false
+    },
+    configure: (
+      hint: Hint<SerialPortHintIdentification, SerialPortHintConfiguration>,
+    ) => {
+      const identification = hint.getIdentification()
+      const configuration = hint.getConfiguration()
 
-      return true
-    }
-    return false
-  },
-  configure: (hint: Hint<SerialPortHintIdentification, SerialPortHintConfiguration>) => {
-    const identification = hint.getIdentification()
-    const configuration = hint.getConfiguration()
+      const options: SerialTransportOptions = {
+        SerialPort,
+        path: identification.path,
+        baudRate: configuration.baudRate,
+        attachmentDelay: 500, // if you have an arduino that resets on connection, set this to 2000.
+      }
+      return options
+    },
+  })
+  return serialConsumer
+}
 
-    const options: SerialTransportOptions = {
-      SerialPort,
-      path: identification.path,
-      baudRate: configuration.baudRate,
-      attachmentDelay: 500, // if you have an arduino that resets on connection, set this to 2000.
-    }
-    return options
-  },
-})
+export function buildUsbToSerialTransformer(
+  serialProducer: SerialPortHintProducer,
+) {
+  const usbToSerialTransformer = new SerialPortUSBHintTransformer({
+    producer: serialProducer,
+  })
 
-const usbToSerialTransformer = new SerialPortUSBHintTransformer({
-  producer: serialProducer,
-})
-
-export { serialConsumer, serialProducer, usbProducer, usbToSerialTransformer }
+  return usbToSerialTransformer
+}

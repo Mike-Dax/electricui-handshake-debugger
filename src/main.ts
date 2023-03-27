@@ -2,6 +2,10 @@ import * as testCases from './tests/'
 
 import { Configuration, StreamReport } from '@electricui/script-utilities'
 import { LogMessageName } from './LogMessageName'
+import inquirer from 'inquirer';
+import PressToContinuePrompt from 'inquirer-press-to-continue';
+
+inquirer.registerPrompt('press-to-continue', PressToContinuePrompt);
 
 const configuration = new Configuration({
   logFilters: [],

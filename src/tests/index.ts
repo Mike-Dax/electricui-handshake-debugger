@@ -1,1 +1,1 @@
-export * from './blink-test'
+export * from './handshake-test'
