@@ -301,7 +301,7 @@ export const handshake = async (report: StreamReport) => {
 
     if (messageIDsExpecting.length !== response.payload) {
       report.reportError(
-        LogMessageName.UNNAMED,
+        LogMessageName.EXCEPTION,
         `Incorrect number of messageIDs in handshake, HW reported ${response.payload} messageIDs but UI only received ${messageIDsExpecting.length}`,
       )
       return
@@ -428,7 +428,7 @@ async function sendMessageWaitForResponse<T extends Message>(
       codecsDecoder.readPipeline.receive(decoded, cancellationToken)
     } catch (e) {
       report.reportError(
-        LogMessageName.TRANSIENT,
+        LogMessageName.EXCEPTION,
         `failed to decode packet: ${e}`,
       )
     }
@@ -494,6 +494,7 @@ async function sendMessageWaitForResponse<T extends Message>(
               LogMessageName.EXCEPTION,
               `failed to receive reply in time`,
             )
+            throw new Error(`timed out`)
           } else {
             report.reportError(
               LogMessageName.EXCEPTION,
