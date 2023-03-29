@@ -240,6 +240,36 @@ export const handshake = async (report: StreamReport) => {
     )
   }
 
+  {
+    // Try a callback, messageID "cb", firmware should reply on messageID "re" with 255
+    const callbackMessage = new Message("cb", null)
+    callbackMessage.metadata.internal = false
+    callbackMessage.metadata.type = TYPES.CALLBACK
+    callbackMessage.metadata.query = false
+    callbackMessage.metadata.ack = false
+    const callbackCancellationToken = new CancellationToken(
+      `callback request`,
+    ).deadline(1000)
+
+    await sendMessageWaitForResponse(
+      report,
+      connection,
+      callbackMessage,
+      message =>
+        message.messageID === "re" &&
+        message.metadata.internal === false &&
+        message.payload === 255 &&
+        message.metadata.query === false,
+      callbackCancellationToken,
+      `Sending callback`,
+    )
+
+    report.reportInfo(
+      LogMessageName.UNNAMED,
+      `Successfully received reply from callback.`,
+    )
+  }
+
   /**
    * Handshake:
    *
