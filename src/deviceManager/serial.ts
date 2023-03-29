@@ -77,7 +77,7 @@ export function buildSerialTransportFactory() {
       // `name` is added because it is requested by the metadata requester before handshake.
       const undefinedMessageIDGuard = new UndefinedMessageIDGuardPipeline(
         typeCache,
-        ['name', 'ws'],
+        ['name', 'ws', 'cb'],
       )
 
       const codecPipeline = new CodecDuplexPipelineWithDefaults({
