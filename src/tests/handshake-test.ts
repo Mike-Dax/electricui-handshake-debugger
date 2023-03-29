@@ -270,6 +270,35 @@ export const handshake = async (report: StreamReport) => {
     )
   }
 
+  {
+    // Try a query
+    const queryMessage = new Message("led_blink", null)
+    queryMessage.metadata.internal = false
+    queryMessage.metadata.type = TYPES.UINT8
+    queryMessage.metadata.query = true
+    queryMessage.metadata.ack = false
+    const boardIDCancellationToken = new CancellationToken(
+      `query request`,
+    ).deadline(1000)
+
+    const response = await sendMessageWaitForResponse(
+      report,
+      connection,
+      queryMessage,
+      message =>
+        message.messageID === "led_blink" &&
+        message.metadata.internal === false &&
+        message.metadata.query === false,
+      boardIDCancellationToken,
+      `Sending query packet`,
+    )
+
+    report.reportInfo(
+      LogMessageName.UNNAMED,
+      `Successfully received query response, led_blink: ${response.payload}`,
+    )
+  }
+
   /**
    * Handshake:
    *
