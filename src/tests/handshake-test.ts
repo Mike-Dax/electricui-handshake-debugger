@@ -55,7 +55,7 @@ async function keypress(message: string) {
   })
 
   // The StreamReport doesn't play well with the spinner
-  console.log("")
+  console.log('')
 }
 
 /**
@@ -181,6 +181,8 @@ export const handshake = async (report: StreamReport) => {
     overallConnectionCancellationToken,
   )
   report.reportInfo(LogMessageName.TRANSIENT, `Connected.`)
+
+  await keypress(`Press any key to send a board ID packet request...`)
 
   {
     // Try a board ID packet
@@ -352,8 +354,9 @@ export const handshake = async (report: StreamReport) => {
     )
 
     for (const [messageID, payload] of messageMap.entries()) {
-
-      const prettyPayload = Buffer.isBuffer(payload) ? bufferToHexString(payload) : JSON.stringify(payload)
+      const prettyPayload = Buffer.isBuffer(payload)
+        ? bufferToHexString(payload)
+        : JSON.stringify(payload)
 
       report.reportInfo(
         LogMessageName.UNNAMED,
@@ -506,10 +509,7 @@ async function sendMessageWaitForResponse<T extends Message>(
 
         res = (await waitForReply) as T
 
-        await keypress(
-          `Step successful, press any key to continue...`,
-        )
-
+        await keypress(`Step successful, press any key to continue...`)
       },
     )
   } catch (e) {
